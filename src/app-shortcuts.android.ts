@@ -3,40 +3,64 @@ import { Application, Utils } from "@nativescript/core";
 
 declare const android: any;
 
-let quickActionCallback: (data: LaunchQuickAction) => void = null;
+let quickActionCallback: (data: LaunchQuickAction) => void;
 let lastQuickAction: any = null;
 
 const SHORTCUT_PREFIX = "shortcut.type.";
 
-(() => {
-  const iconHandler = args => {
-    if (!args || !args.android || !args.android.getAction) {
-      return;
-    }
 
-    const launchAction = args.android.getAction();
-
-    const isShortcutAction = launchAction && launchAction.indexOf(SHORTCUT_PREFIX) > -1;
-    if (isShortcutAction) {
-      // "clear" the intent
-      args.android.setAction("");
-
-      const quickAction = {
-        type: launchAction.substring(SHORTCUT_PREFIX.length)
-      };
-      if (quickActionCallback) {
-        quickActionCallback(quickAction);
-      } else {
-        lastQuickAction = quickAction;
-      }
-    }
-  };
-
-  Application.on("launch", (args) => iconHandler(args));
-})();
 
 export class AppShortcuts implements AppShortcutsAPI {
+  private static _shortcutIntentCreated = false;
+  private static _launchedByShortcut: boolean = false;
+  static get LaunchedByShortcut(): boolean {
+    return AppShortcuts._launchedByShortcut;
+  }
 
+
+  static Init() {
+
+      (() => {
+ 
+        const iconHandlerIntent = (args?: android.content.Intent, launchEvent: boolean = false) => {
+          console.log("AppShortcuts: iconHandler");
+          if (launchEvent && AppShortcuts._shortcutIntentCreated) {
+          
+              AppShortcuts._launchedByShortcut = AppShortcuts._shortcutIntentCreated;
+          } else {
+            if (!args || !args.getAction) {
+              return;
+            }
+
+            const launchAction = args.getAction();
+
+            const isShortcutAction = launchAction && launchAction.indexOf(SHORTCUT_PREFIX) > -1;
+            if (isShortcutAction) {
+              if (launchEvent && AppShortcuts._shortcutIntentCreated) {
+                  AppShortcuts._launchedByShortcut = true;
+              } else {
+                  AppShortcuts._shortcutIntentCreated = true;
+              }
+              // "clear" the intent
+              args.setAction("");
+
+              const quickAction = {
+                type: launchAction.substring(SHORTCUT_PREFIX.length)
+              };
+              if (quickActionCallback) {
+                quickActionCallback(quickAction);
+              } else {
+                lastQuickAction = quickAction;
+              }
+            }
+          }
+        };
+
+        Application.on("launch", (args) => iconHandlerIntent(args.android, true));
+        Application.android.on(Application.AndroidApplication.activityNewIntentEvent, (args) => iconHandlerIntent(args.intent)); // is this the guy.
+      })();
+
+  }
   private supported(): boolean {
     return android.os.Build.VERSION.SDK_INT >= 25; // Android 7.1+
   }

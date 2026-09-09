@@ -1,12 +1,12 @@
 {
   "name": "nativescript-app-shortcuts",
-  "version": "3.0.0",
+  "version": "4.0.10-rc",
   "description": "Add shortcut actions to your app icon.",
   "main": "app-shortcuts",
   "scripts": {
     "ts.patch": "ts-patch install",
-    "tsc": "tsc -skipLibCheck",
-    "build": "ns clean && npm i && npm run ts.patch && npm run tsc",
+    "tsc": "tspc -skipLibCheck",
+    "build": "npm i && npm run ts.patch && npm run tsc",
     "demo.ios": "npm run build && cd ../demo && ns run ios",
     "demo.android": "npm run preparedemo && cd ../demo && ns run android",
     "test": "npm run tslint && npm run tslint.demo && cd ../demo && ns build ios && ns build android",
@@ -14,7 +14,7 @@
     "test.ios.device": "cd ../demo && ns platform remove ios && ns test ios",
     "test.android": "cd ../demo && ns platform remove android && ns test android",
     "preparedemo": "npm run build && cd ../demo && ns clean && ns install",
-    "setup": "npm run build && cd ../demo && npm i",
+    "setup": "npm i && ts-patch install",
     "setupandinstall": "npm i && cd ../demo && npm i && cd ../src && npm run build && cd ../demo && ns plugin add ../src && cd ../src",
     "tslint": "cd .. && tslint \"**/*.ts\" --config tslint.json --exclude '**/node_modules/**' --exclude '**/tns_modules/**' --exclude '**/typings/**' --exclude '**/platforms/**'",
     "tslint.demo": "tslint --config '../tslint.json' '../demo/app/*.ts' --exclude '**/node_modules/**'",
@@ -49,16 +49,14 @@
   "homepage": "https://github.com/EddyVerbruggen/nativescript-app-shortcuts",
   "readmeFilename": "README.md",
   "devDependencies": {
-    "@nativescript/core": "~7.0.13",
-    "@nativescript/android": "^7.0.0",
-    "@nativescript/ios": "^7.0.6",
-    "@nativescript/types": "~7.0.4",
-    "@nativescript/webpack": "~3.0.5",
-    "ts-patch": "^1.3.1",
+    "@nativescript/core": "9.1.1",
+    "@nativescript/android": "9.1.0",
+    "@nativescript/ios": "9.1.0",
+    "@nativescript/types": "9.1.0",
+    "@nativescript/webpack": "5.0.38",
+
+    "ts-patch": "^4.0.1",
     "tslint": "^5.0.0",
-    "typescript": "~3.9.0"
-  },
-  "dependencies": {
-    "ts-node": "^9.1.1"
+    "typescript": "~6.0.3"
   }
 }
