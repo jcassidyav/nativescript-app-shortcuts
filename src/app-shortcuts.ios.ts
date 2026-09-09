@@ -1,41 +1,51 @@
-import { Application, Utils } from "@nativescript/core";
+import { Application, NativeWindowEvents, Utils } from "@nativescript/core";
 import { AppShortcutsAPI, LaunchQuickAction, QuickAction } from "./app-shortcuts.common";
 
 const iOSApplication = Application.ios;
 const iOSUtils = Utils.ios;
-
-let quickActionCallback: (data: LaunchQuickAction) => void = null;
+  
+let quickActionCallback: (data: LaunchQuickAction) => void;
 let lastQuickAction: any = null;
 
-const callback = (application, shortcutItem, completionHandler) => {
-  if (quickActionCallback !== null) {
+const callback = (shortcutItem: UIApplicationShortcutItem, completionHandler: (p1: boolean) => void) => {
+  if (quickActionCallback !== null && quickActionCallback !== undefined) {
     quickActionCallback(shortcutItem);
   } else {
     lastQuickAction = shortcutItem;
   }
 };
 
-@NativeClass()
-class AppShortcutsUIApplicationDelegate extends UIResponder implements UIApplicationDelegate {
-  public static ObjCProtocols = [UIApplicationDelegate];
-
-  applicationPerformActionForShortcutItemCompletionHandler(application: UIApplication, shortcutItem: UIApplicationShortcutItem, completionHandler: (p1: boolean) => void): void {
-    callback(application, shortcutItem, completionHandler);
-  }
-}
-
-(() => {
-  if (iOSApplication.delegate !== undefined) {
-    // Play nice with other plugins by not completely ignoring anything already added to the appdelegate
-    iOSApplication.delegate.prototype.applicationPerformActionForShortcutItemCompletionHandler = callback;
-  } else {
-    iOSApplication.delegate = AppShortcutsUIApplicationDelegate;
-  }
-})();
-
 export class AppShortcuts implements AppShortcutsAPI {
   // caching for efficiency
-  private availability = null;
+  private availability: boolean | null = null;
+
+  private static _launchedByShortcut: boolean = false;
+  static get LaunchedByShortcut(): boolean {
+    return AppShortcuts._launchedByShortcut;
+  }
+
+static Init() {
+    Application.ios.on(NativeWindowEvents.scenePerformActionForShortcutItem, (args) => {
+      console.log("AppShortcuts: NativeWindowEvents.scenePerformActionForShortcutItem");
+      callback(args.shortcutItem, args.completionHandler);
+      console.log("AppShortcuts: NativeWindowEvents.scenePerformActionForShortcutItem callback complete");
+    });
+    Application.ios.on(NativeWindowEvents.sceneWillConnect, (args) => {
+      console.log("AppShortcuts: NativeWindowEvents.sceneWillConnect");
+      if (args){
+        console.log("AppShortcuts: NativeWindowEvents.sceneWillConnect args.ios is defined");
+        if(args.connectionOptions){
+            console.log("AppShortcuts: NativeWindowEvents.sceneWillConnect args.ios.connectionOptions is defined");
+          if(args.connectionOptions.shortcutItem){
+            console.log("AppShortcuts: NativeWindowEvents.sceneWillConnect args.ios.connectionOptions.shortcutItem is defined");
+            AppShortcuts._launchedByShortcut = true;
+        console.log("AppShortcuts: NativeWindowEvents.sceneWillConnect shortcutItem found");
+        callback(args.connectionOptions.shortcutItem, (p1) => {
+          console.log("AppShortcuts: NativeWindowEvents.sceneWillConnect shortcutItem callback complete");
+        });
+      }}}
+    });
+}
 
   public available(): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
@@ -46,22 +56,22 @@ export class AppShortcuts implements AppShortcutsAPI {
       }
 
       // With iOS 13 probably any iOS device supports this feature, because 3D Touch is no longer required
-      if (iOSUtils.MajorVersion >= 13) {
+      if (Utils.SDK_VERSION >= 13) {
         resolve(true);
         return;
       }
 
       // iOS 9 added 3D Touch capability
-      if (iOSUtils.MajorVersion >= 9) {
+      if (Utils.SDK_VERSION >= 9) {
         // .. but not all devices running iOS 9 support it
         if (iOSApplication.nativeApp.keyWindow === null) {
           // (especially) in Angular apps, this might run too soon. Wrapping it in a timeout solves that issue.
           setTimeout(() => {
-            this.availability = UIForceTouchCapability.Available === iOSApplication.nativeApp.keyWindow.rootViewController.traitCollection.forceTouchCapability;
+            this.availability = UIForceTouchCapability.Available === iOSApplication.nativeApp.keyWindow?.rootViewController?.traitCollection.forceTouchCapability;
             resolve(this.availability);
           });
         } else {
-          this.availability = UIForceTouchCapability.Available === iOSApplication.nativeApp.keyWindow.rootViewController.traitCollection.forceTouchCapability;
+          this.availability = UIForceTouchCapability.Available === iOSApplication.nativeApp.keyWindow?.rootViewController?.traitCollection.forceTouchCapability;
           resolve(this.availability);
         }
       } else {
@@ -87,7 +97,7 @@ export class AppShortcuts implements AppShortcutsAPI {
           return;
         }
 
-        const items = [];
+        const items: any[] = [];
 
         actions.map(action => {
           let uiApplicationShortcutIcon = null;
@@ -102,12 +112,13 @@ export class AppShortcuts implements AppShortcutsAPI {
               UIApplicationShortcutItem.alloc().initWithTypeLocalizedTitleLocalizedSubtitleIconUserInfo(
                   action.type,
                   action.title,
-                  action.subtitle,
-                  uiApplicationShortcutIcon,
-                  null));
+                  action.subtitle as string,
+                  uiApplicationShortcutIcon as UIApplicationShortcutIcon,
+                  null as unknown as NSDictionary<string, NSSecureCoding>));
         });
 
-        iOSApplication.nativeApp.shortcutItems = items;
+        
+        iOSApplication.nativeApp.shortcutItems = items as unknown as NSArray<UIApplicationShortcutItem>;
 
         resolve();
       });
