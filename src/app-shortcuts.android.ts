@@ -1,8 +1,6 @@
 import { AppShortcutsAPI, LaunchQuickAction, QuickAction } from "./app-shortcuts.common";
 import { Application, Utils } from "@nativescript/core";
 
-declare const android: any;
-
 let quickActionCallback: (data: LaunchQuickAction) => void;
 let lastQuickAction: any = null;
 

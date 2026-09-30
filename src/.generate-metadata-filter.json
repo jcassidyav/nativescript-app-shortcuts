@@ -1,0 +1,8 @@
+{
+
+    "typeSources":{
+        "ios": [],
+        "android": []
+    },
+    "mode":"plugin"
+}

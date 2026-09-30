@@ -1,0 +1,18 @@
+{
+     "uses": [
+          "android.content.pm:ShortcutInfo",
+          "android.content.pm:ShortcutInfo.Builder",
+          "android.content.pm:ShortcutManager",
+          "android.content:Context",
+          "android.content:Intent",
+          "android.graphics.drawable:Icon",
+          "android.os:Build",
+          "android.os:Build.VERSION",
+          "android.os:Parcelable",
+          "java.lang:Class",
+          "java.lang:Cloneable",
+          "java.lang:Object",
+          "java.util:AbstractList",
+          "java.util:ArrayList"
+     ]
+}
